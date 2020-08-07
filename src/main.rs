@@ -3,8 +3,6 @@ use std::fs::OpenOptions;
 use std::io;
 use std::io::prelude::*;
 use std::path::Path;
-use std::thread::sleep;
-use std::time::Duration;
 
 fn main() -> std::io::Result<()> {
     let filename = String::from("primes.txt");
@@ -19,7 +17,7 @@ fn main() -> std::io::Result<()> {
     let mut known_primes: Vec<i64> = Vec::new();
 
     print!("Loading numbers...");
-    io::stdout().flush();
+    io::stdout().flush().unwrap();
     let reader = File::open(&filename).unwrap();
 
     let mut buff_reader = io::BufReader::new(reader);
@@ -35,13 +33,28 @@ fn main() -> std::io::Result<()> {
     }
     println!("\rLoaded.                ");
 
+    println!("To what number shall I find primes?");
+
+    io::stdin().read_line(&mut line).unwrap();
+
+    let upper_bound: i64 = match line.trim().parse() {
+        Ok(num) => num,
+        Err(_) => panic!("Cannot read number."),
+    };
+
+    //let mut writer = io::BufWriter::new(file);
+    let mut wanted_num: i64 = known_primes[known_primes.len() - 1];
+
+    if wanted_num >= upper_bound {
+        println!("Already in file {}", &filename);
+        return Ok(());
+    }
+
     let mut file = OpenOptions::new()
         .append(true)
         .open(&filename)
         .expect("Cannot open file");
-    //let mut writer = io::BufWriter::new(file);
-    let mut wanted_num = known_primes[known_primes.len() - 1];
-    loop {
+    while wanted_num < upper_bound {
         wanted_num += 2;
         let root = (wanted_num as f64).sqrt().floor() as i64;
         let mut add = true;
@@ -61,9 +74,10 @@ fn main() -> std::io::Result<()> {
             let text: String = wanted_num.to_string() + "\n";
             //writer.write_all(text.as_bytes()).unwrap();
             file.write_all(text.as_bytes()).unwrap();
-            println!("Number: {0}", wanted_num);
+            //println!("Number: {0}", wanted_num);
             known_primes.push(wanted_num);
-            //sleep(Duration::from_millis(50));
         }
     }
+    println!("Done.");
+    Ok(())
 }
